@@ -135,6 +135,7 @@ module ApplicationHelper
     end
   end
 
+  #  TODO replace these two logo paths with new theme system
   def logo_path
     ENV["NAVBAR_LOGO_PATH"] or "navbar-logo.png"
   end
