@@ -17,8 +17,8 @@ class Group < ActiveRecord::Base
   validates_inclusion_of :payment_plan, in: PAYMENT_PLANS
   validates_inclusion_of :privacy, in: PRIVACY_CATEGORIES
   validates_inclusion_of :members_invitable_by, in: INVITER_CATEGORIES
-  validates :description, :length => { :maximum => 250 }
-  validates :name, :length => { :maximum => 250 }
+  validates :description, length: { maximum: 250 }
+  validates :name, length: { maximum: 250 }
 
   validate :limit_inheritance
   validate :privacy_allowed_by_parent, if: :is_a_subgroup?
@@ -39,7 +39,7 @@ class Group < ActiveRecord::Base
   scope :archived, lambda { where('archived_at IS NOT NULL') }
   scope :published, lambda { where(archived_at: nil) }
 
-  scope :parents_only, where(:parent_id => nil)
+  scope :parents_only, where(parent_id: nil)
 
   scope :sort_by_popularity,
         order('memberships_count DESC')
@@ -120,6 +120,8 @@ class Group < ActiveRecord::Base
 
   belongs_to :parent, class_name: 'Group'
   belongs_to :category
+  belongs_to :theme
+
   has_many :subgroups, class_name: 'Group', foreign_key: 'parent_id', conditions: { archived_at: nil }
 
   has_one :subscription, dependent: :destroy
@@ -314,6 +316,10 @@ class Group < ActiveRecord::Base
 
   def is_hidden?
     privacy == "hidden"
+  end
+
+  def has_subdomain?
+    subdomain.present?
   end
 
   private

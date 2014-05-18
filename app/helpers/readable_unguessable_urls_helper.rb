@@ -1,10 +1,11 @@
 module ReadableUnguessableUrlsHelper
   MODELS_WITH_SLUGS = { 'discussion' => :title,
-                             'group' => :full_name,
                               'user' => :name,
+                            'group'  => :full_name,
                             'motion' => :name }
 
   MODELS_WITH_SLUGS.keys.each do |model|
+    next if model == 'group'
     model = model.to_s.downcase
 
     define_method("#{model}_url", ->(instance, options={}) {
@@ -22,7 +23,45 @@ module ReadableUnguessableUrlsHelper
 
   end
 
+  def with_subdomain(subdomain)
+    subdomain = (subdomain || "")
+    subdomain += "." unless subdomain.empty?
+    [subdomain, request.domain, request.port_string].join
+  end
 
+  def url_for(options = nil)
+    if options.kind_of?(Hash) && options.has_key?(:subdomain)
+      options[:host] = with_subdomain(options.delete(:subdomain))
+    end
+    super
+  end
+
+  def group_url(group, options = {})
+    options = options.merge( host_and_port )
+
+    if group.has_subdomain?
+      # butcher.. because when you try something toooo fancy rails routes goes CRAZY
+      options[:subdomain] = group.subdomain
+      uri = URI(url_for(options))
+      uri.path = ''
+      uri.to_s
+    else
+      options = options.merge( route_hash(group, 'group') )
+      if request.present?
+        options[:host] = request.domain
+        options.delete(:subdomain)
+      else
+        ActionMailer::Base.default_url_options
+      end
+      url_for(options)
+    end
+
+  end
+
+  def group_path(group, options = {})
+    #options = options.merge(only_path: true) unless group.has_subdomain?
+    group_url(group, options)
+  end
 
   private
 
